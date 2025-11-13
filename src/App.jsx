@@ -247,38 +247,36 @@ function App() {
   return (
     <div className="app-container">
       {/* Sidebar for chat history */}
-      {showHistory && (
-        <div className="sidebar">
-          <div className="sidebar-header">
-            <h2>Chat History</h2>
-            <button onClick={() => setShowHistory(false)} className="close-btn">×</button>
-          </div>
-          <button onClick={createNewChat} className="new-chat-btn">
-            + New Chat
-          </button>
-          <div className="history-list">
-            {chatHistory.map((chat) => (
-              <div 
-                key={chat.id} 
-                className={`history-item ${chat.id === currentChatId ? 'active' : ''}`}
-                onClick={() => switchChat(chat.id)}
-              >
-                <div className="history-content">
-                  <div className="history-title">{chat.title}</div>
-                  <div className="history-date">{formatDateTime(chat.timestamp)}</div>
-                </div>
-                <button 
-                  onClick={(e) => deleteChat(chat.id, e)} 
-                  className="delete-chat-btn"
-                  aria-label="Delete chat"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
+      <div className={`sidebar ${showHistory ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <h2>Chat History</h2>
+          <button onClick={() => setShowHistory(false)} className="close-btn">×</button>
         </div>
-      )}
+        <button onClick={createNewChat} className="new-chat-btn">
+          + New Chat
+        </button>
+        <div className="history-list">
+          {chatHistory.map((chat) => (
+            <div 
+              key={chat.id} 
+              className={`history-item ${chat.id === currentChatId ? 'active' : ''}`}
+              onClick={() => switchChat(chat.id)}
+            >
+              <div className="history-content">
+                <div className="history-title">{chat.title}</div>
+                <div className="history-date">{formatDateTime(chat.timestamp)}</div>
+              </div>
+              <button 
+                onClick={(e) => deleteChat(chat.id, e)} 
+                className="delete-chat-btn"
+                aria-label="Delete chat"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
       
       {/* Main chat area */}
       <div className={`chat-container ${showHistory ? 'with-sidebar' : ''}`}>
