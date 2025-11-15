@@ -90,16 +90,18 @@ function App() {
     const savedHistory = JSON.parse(localStorage.getItem('chatHistory')) || []
     setChatHistory(savedHistory)
     
-    // If there are saved conversations, load the first one
-    if (savedHistory.length > 0) {
-      setCurrentChatId(savedHistory[0].id)
-      setMessages(savedHistory[0].messages)
-    }
+    // Always create a new chat when the app loads
+    setTimeout(() => {
+      createNewChat()
+    }, 0)
   }, [])
 
   // Save chat history to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('chatHistory', JSON.stringify(chatHistory))
+    // Only save if chatHistory is not empty (to avoid overwriting loaded history)
+    if (chatHistory.length > 0) {
+      localStorage.setItem('chatHistory', JSON.stringify(chatHistory))
+    }
   }, [chatHistory])
 
   // System message to set AI identity and behavior
@@ -118,6 +120,13 @@ function App() {
 
   // Create a new chat
   const createNewChat = useCallback(() => {
+    // Prevent duplicate calls
+    if (window.creatingNewChat) {
+      return
+    }
+    
+    window.creatingNewChat = true
+    
     const newChat = {
       id: Date.now().toString(),
       title: 'New Chat',
@@ -125,12 +134,24 @@ function App() {
       timestamp: new Date().toISOString()
     }
     
-    setChatHistory(prev => [newChat, ...prev])
+    // Add new chat to the beginning of the history
+    setChatHistory(prev => {
+      const updatedHistory = [newChat, ...prev]
+      return updatedHistory
+    })
+    
     setCurrentChatId(newChat.id)
     setMessages([])
     setInput('')
+    
+    // Reset the flag after a short delay
+    setTimeout(() => {
+      window.creatingNewChat = false
+    }, 100)
+    
+    return newChat.id
   }, [])
-
+  
   // Switch to a different chat
   const switchChat = useCallback((chatId) => {
     const chat = chatHistory.find(c => c.id === chatId)
@@ -152,30 +173,63 @@ function App() {
       if (updatedHistory.length > 0) {
         switchChat(updatedHistory[0].id)
       } else {
-        createNewChat()
+        // Only create a new chat if we're not already creating one
+        if (!window.creatingNewChat) {
+          createNewChat()
+        }
       }
     }
-  }, [chatHistory, currentChatId, switchChat, createNewChat])
+  }, [currentChatId, chatHistory, switchChat, createNewChat])
 
   // Update the current chat with new messages
   const updateCurrentChat = useCallback((newMessages) => {
-    setChatHistory(prev => prev.map(chat => {
-      if (chat.id === currentChatId) {
-        // Update title if it's still the default
-        const title = chat.title === 'New Chat' && newMessages.length > 0 
-          ? newMessages[0].content.substring(0, 30) + (newMessages[0].content.length > 30 ? '...' : '')
-          : chat.title
-        
-        return {
-          ...chat,
-          title,
-          messages: newMessages,
-          timestamp: new Date().toISOString()
+    // Ensure we have a current chat ID before updating
+    if (!currentChatId) {
+      console.warn('No current chat ID, creating new chat first')
+      const newId = createNewChat()
+      // Update the newly created chat
+      setChatHistory(prev => {
+        const updatedHistory = prev.map(chat => {
+          if (chat.id === newId) {
+            // Update title if it's still the default
+            const title = chat.title === 'New Chat' && newMessages.length > 0 
+              ? newMessages[0].content.substring(0, 30) + (newMessages[0].content.length > 30 ? '...' : '')
+              : chat.title
+            
+            return {
+              ...chat,
+              title,
+              messages: newMessages,
+              timestamp: new Date().toISOString()
+            }
+          }
+          return chat
+        })
+        return updatedHistory
+      })
+      return
+    }
+    
+    setChatHistory(prev => {
+      const updatedHistory = prev.map(chat => {
+        if (chat.id === currentChatId) {
+          // Update title if it's still the default
+          const title = chat.title === 'New Chat' && newMessages.length > 0 
+            ? newMessages[0].content.substring(0, 30) + (newMessages[0].content.length > 30 ? '...' : '')
+            : chat.title
+          
+          return {
+            ...chat,
+            title,
+            messages: newMessages,
+            timestamp: new Date().toISOString()
+          }
         }
-      }
-      return chat
-    }))
-  }, [currentChatId])
+        return chat
+      })
+      return updatedHistory
+    })
+  }, [currentChatId, createNewChat])
 
   const sendMessage = useCallback(async (e) => {
     e.preventDefault()
@@ -187,7 +241,7 @@ function App() {
     setInput('')
     setIsLoading(true)
     
-    // Update current chat immediately
+    // Update current chat immediately with the user message
     updateCurrentChat(newMessages)
 
     try {
