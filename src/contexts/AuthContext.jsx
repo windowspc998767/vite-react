@@ -1,60 +1,44 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "../supabase";
 
 const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Load user on app start
   useEffect(() => {
-    // Check if user is already logged in (token in localStorage)
-    const token = localStorage.getItem('token');
-    if (token) {
-      // In a real app, you would verify the token with the backend
-      // For now, we'll just check if it exists
-      try {
-        // Decode token to get user info (simplified)
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({
-          id: payload.userId,
-          email: payload.email
-        });
-      } catch (error) {
-        // Invalid token, remove it
-        localStorage.removeItem('token');
+    const loadUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user || null);
+      setLoading(false);
+    };
+
+    loadUser();
+
+    // Listen for login/logout
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
       }
-    }
-    setLoading(false);
+    );
+
+    return () => subscription.subscription.unsubscribe();
   }, []);
 
-  const login = (token, userData) => {
-    localStorage.setItem('token', token);
-    setUser(userData);
-  };
+  const login = (user) => setUser(user);
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
-  const value = {
-    user,
-    login,
-    logout,
-    loading
-  };
-
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
+      {children}
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext);
