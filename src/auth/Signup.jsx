@@ -1,11 +1,14 @@
 import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
-const Signup = ({ onSignupSuccess }) => {
+const Signup = ({ onSwitchToLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +23,7 @@ const Signup = ({ onSignupSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,10 +34,8 @@ const Signup = ({ onSignupSuccess }) => {
       const data = await response.json();
 
       if (response.ok) {
-        // Save token to localStorage
-        localStorage.setItem('token', data.token);
-        // Call the success callback
-        onSignupSuccess(data.token, data.user);
+        // Use the auth context to set the user
+        login(data.token, data.user);
       } else {
         setError(data.message || 'Signup failed');
       }
@@ -90,9 +91,7 @@ const Signup = ({ onSignupSuccess }) => {
         <div className="auth-switch">
           <p>Already have an account? <a href="#login" onClick={(e) => {
             e.preventDefault();
-            // We would normally switch to login view here
-            // For now, we'll just show an alert
-            alert('Login functionality would be implemented here');
+            onSwitchToLogin();
           }}>Log in</a></p>
         </div>
       </div>
