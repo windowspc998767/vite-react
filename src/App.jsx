@@ -3,9 +3,6 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import './App.css'
-import Login from './auth/Login'
-import Signup from './auth/Signup'
-import { useAuth } from './contexts/AuthContext'
 
 const API_KEY = 'KJCzQjV1uiQQCEz9Dg3RkRlIu10SyLKsOaZpxCizOxY'
 const API_ENDPOINT = 'https://vanchin.streamlake.ai/api/gateway/v1/endpoints'
@@ -76,7 +73,7 @@ const Message = memo(({ message, index }) => {
   )
 })
 
-function ChatApp() {
+function App() {
   // State for current conversation
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -301,8 +298,6 @@ function ChatApp() {
     return date.toLocaleString()
   }, [])
 
-  const { user, logout } = useAuth();
-  
   return (
     <div className="app-container">
       {/* Sidebar for chat history */}
@@ -334,10 +329,6 @@ function ChatApp() {
               </button>
             </div>
           ))}
-        </div>
-        <div className="user-info">
-          <span>Welcome, {user.email}</span>
-          <button onClick={logout} className="sidebar-logout-btn">Logout</button>
         </div>
       </div>
       
@@ -411,32 +402,4 @@ function ChatApp() {
   )
 }
 
-function App() {
-  const [authView, setAuthView] = useState('login'); // 'login' or 'signup'
-  const { user, logout } = useAuth();
-
-  const switchToSignup = () => setAuthView('signup');
-  const switchToLogin = () => setAuthView('login');
-
-  // If user is authenticated, show the chat app
-  if (user) {
-    return (
-      <div className="app-wrapper">
-        <ChatApp />
-      </div>
-    );
-  }
-
-  // Otherwise, show the authentication screen
-  return (
-    <div className="auth-app-container">
-      {authView === 'login' ? (
-        <Login onSwitchToSignup={switchToSignup} />
-      ) : (
-        <Signup onSwitchToLogin={switchToLogin} />
-      )}
-    </div>
-  );
-}
-
-export default memo(App);
+export default memo(App)
