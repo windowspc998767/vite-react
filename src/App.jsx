@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import './App.css'
+import { useAuth } from './contexts/AuthContext'
+import Auth from './components/Auth'
 
 const API_KEY = 'KJCzQjV1uiQQCEz9Dg3RkRlIu10SyLKsOaZpxCizOxY'
 const API_ENDPOINT = 'https://vanchin.streamlake.ai/api/gateway/v1/endpoints'
@@ -74,6 +76,9 @@ const Message = memo(({ message, index }) => {
 })
 
 function App() {
+  // Authentication
+  const { user, loading: authLoading, signOut } = useAuth()
+
   // State for current conversation
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -386,6 +391,33 @@ function App() {
     }
   }
 
+  // Handle logout
+  const handleLogout = async () => {
+    await signOut()
+    // Clear chat history on logout
+    setMessages([])
+    setChatHistory([])
+    setCurrentChatId(null)
+  }
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <div className="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    )
+  }
+
+  // Show auth screen if not logged in
+  if (!user) {
+    return <Auth />
+  }
+
   return (
     <>
       {/* Terms and Conditions Modal */}
@@ -453,6 +485,22 @@ function App() {
                 </button>
               </div>
             ))}
+          </div>
+
+          {/* Sidebar Footer - Account Section */}
+          <div className="sidebar-footer">
+            <div className="account-section">
+              <div className="account-info">
+                <div className="account-icon">👤</div>
+                <div className="account-details">
+                  <div className="account-email">{user?.email}</div>
+                  <div className="account-label">Account</div>
+                </div>
+              </div>
+              <button onClick={handleLogout} className="sidebar-logout-btn" title="Logout">
+                🚪
+              </button>
+            </div>
           </div>
         </div>
 
