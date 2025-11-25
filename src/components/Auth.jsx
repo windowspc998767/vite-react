@@ -170,7 +170,7 @@ export default function Auth() {
                 </form>
 
                 <div className="auth-footer">
-                    <p>🔒 Secure authentication.</p>
+                    <p>🔒 Secure authentication from Supabase.</p>
                 </div>
             </div>
         </div>
